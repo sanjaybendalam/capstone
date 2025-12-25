@@ -1,0 +1,113 @@
+/* =====================
+   BOOTSTRAP GAP FIX
+===================== */
+html,
+body,
+#root,
+.app-wrapper,
+main,
+.container,
+.container-fluid {
+  background-color: #000000 !important;
+}
+
+
+/* =====================
+   GLOBAL
+===================== */
+body {
+  background-color: #000000;
+  color: #ffffff;
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+/* =====================
+   HERO
+===================== */
+.hero-section {
+  padding: 100px 20px;
+  background: radial-gradient(
+    circle at top,
+    rgba(2, 255, 103, 0.15),
+    #000000 65%
+  );
+}
+
+.hero-section h1 {
+  color: #18e36a;
+}
+
+.hero-section p {
+  color: #cfcfcf;
+}
+
+/* =====================
+   FEATURES
+===================== */
+.features-section {
+  background-color: #000000;
+}
+
+.features-section h2 {
+  color: #ffffff;
+}
+
+/* =====================
+   CARDS (ONLY LIGHT AREA)
+===================== */
+.feature-card {
+  height: 100%;
+  background: linear-gradient(180deg, #ffffff, #f2f4f3);
+  border-radius: 16px;
+  overflow: hidden;
+  border: none;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
+  transition: all 0.3s ease;
+}
+
+.feature-card img {
+  height: 190px;
+  width: 100%;
+  object-fit: cover;
+}
+
+.feature-card .card-body {
+  padding: 24px;
+}
+
+.feature-card .card-title {
+  color: #12c95b;
+  font-weight: 600;
+}
+
+.feature-card .card-text {
+  color: #34403a;
+}
+
+.feature-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 25px 50px rgba(18, 201, 91, 0.35);
+}
+
+/* =====================
+   BUTTONS
+===================== */
+.btn-success {
+  background: linear-gradient(135deg, #18e36a, #12c95b);
+  border: none;
+  color: #000000;
+}
+
+.btn-outline-success {
+  color: #18e36a;
+  border-color: #18e36a;
+}
+
+/* =====================
+   NAVBAR & FOOTER
+===================== */
+.navbar,
+.footer {
+  background-color: #000000;
+  border-top: 1px solid #1e1e1e;
+}
