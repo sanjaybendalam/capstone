@@ -5,15 +5,33 @@ const GoalForm = ({ onSave }) => {
     title: "",
     targetValue: "",
     unit: "",
-    deadline: ""
+    deadline: "",
+    category: ""
   });
   const [errors, setErrors] = useState({});
 
+  const categories = [
+    { value: "electricity", label: "⚡ Electricity" },
+    { value: "transport", label: "🚗 Transport (Petrol/Diesel)" },
+    { value: "flight", label: "✈️ Flights" },
+    { value: "fuel", label: "🔥 Fuel (LPG)" },
+    { value: "food", label: "🍽️ Food" },
+    { value: "waste", label: "🗑️ Waste" }
+  ];
+
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    // Auto-set unit to kg CO2 when category is selected
+    if (name === "category") {
+      setForm({ ...form, [name]: value, unit: "kg CO2" });
+    } else {
+      setForm({ ...form, [name]: value });
+    }
+
     // Clear error when user starts typing
-    if (errors[e.target.name]) {
-      setErrors({ ...errors, [e.target.name]: "" });
+    if (errors[name]) {
+      setErrors({ ...errors, [name]: "" });
     }
   };
 
@@ -53,8 +71,14 @@ const GoalForm = ({ onSave }) => {
       return;
     }
 
-    onSave(form);
-    setForm({ title: "", targetValue: "", unit: "", deadline: "" });
+    // Send category
+    const goalData = {
+      ...form,
+      category: form.category || "electricity"
+    };
+
+    onSave(goalData);
+    setForm({ title: "", targetValue: "", unit: "kg CO2", deadline: "", category: "electricity" });
     setErrors({});
   };
 
@@ -68,6 +92,25 @@ const GoalForm = ({ onSave }) => {
   return (
     <form onSubmit={handleSubmit} className="goal-form card p-4 mb-4">
       <h5 className="mb-3">Add New Sustainability Goal</h5>
+
+      {/* Category Selection */}
+      <div className="mb-3">
+        <label>Category</label>
+        <select
+          name="category"
+          value={form.category}
+          onChange={handleChange}
+          className="form-select"
+          required
+        >
+          {categories.map((cat) => (
+            <option key={cat.value} value={cat.value}>
+              {cat.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <div className="mb-3">
         <label>Goal Title</label>
         <input
@@ -76,7 +119,7 @@ const GoalForm = ({ onSave }) => {
           value={form.title}
           onChange={handleChange}
           className={`form-control ${errors.title ? 'is-invalid' : ''}`}
-          placeholder="e.g., Reduce plastic usage"
+          placeholder="e.g., Reduce transport emissions"
           required
         />
         {errors.title && <div className="invalid-feedback">{errors.title}</div>}
@@ -99,16 +142,18 @@ const GoalForm = ({ onSave }) => {
           <small className="text-muted">Set a realistic target (max 10,000)</small>
         </div>
         <div className="col-md-6 mb-3">
-          <label>Unit (kg, km, items, etc.)</label>
+          <label>Unit</label>
           <input
             type="text"
             name="unit"
             value={form.unit}
             onChange={handleChange}
             className="form-control"
-            placeholder="e.g., kg, km, items"
+            placeholder={form.category ? "kg CO2" : "e.g., kg, km, items"}
+            readOnly={!!form.category}
             required
           />
+          {form.category && <small className="text-muted">Auto-set for carbon tracking</small>}
         </div>
       </div>
       <div className="mb-3">
@@ -133,3 +178,4 @@ const GoalForm = ({ onSave }) => {
 };
 
 export default GoalForm;
+

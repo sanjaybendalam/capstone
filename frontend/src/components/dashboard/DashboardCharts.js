@@ -18,20 +18,27 @@ const DashboardCharts = ({ carbonData, goals }) => {
             // Check for invalid date
             if (isNaN(dateObj.getTime())) return;
 
-            const dateStr = dateObj.toLocaleDateString('en-US', {
+            // Use ISO date format for proper sorting
+            const sortKey = dateObj.toISOString().split('T')[0];
+            const displayDate = dateObj.toLocaleDateString('en-US', {
                 month: 'short',
                 day: 'numeric'
             });
 
-            if (!groupedByDate[dateStr]) {
-                groupedByDate[dateStr] = 0;
+            if (!groupedByDate[sortKey]) {
+                groupedByDate[sortKey] = { date: displayDate, emissions: 0, sortKey };
             }
-            groupedByDate[dateStr] += entry.calculatedCO2 || 0;
+            groupedByDate[sortKey].emissions += entry.calculatedCO2 || 0;
         });
 
-        return Object.entries(groupedByDate)
-            .map(([date, emissions]) => ({ date, emissions: parseFloat(emissions.toFixed(2)) }))
-            .slice(-7); // Last 7 days
+        // Sort by date and take last 7 days
+        return Object.values(groupedByDate)
+            .sort((a, b) => a.sortKey.localeCompare(b.sortKey))
+            .slice(-7)
+            .map(item => ({
+                date: item.date,
+                emissions: parseFloat(item.emissions.toFixed(2))
+            }));
     };
 
     // Process carbon data for pie chart - group by category

@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Goal = require("../models/Goal");
+const Notification = require("../models/Notification");
 const authMiddleware = require("../middlewares/authMiddleware");
 
 // Create a goal
@@ -43,9 +44,20 @@ router.put("/:goalId/toggle", authMiddleware, async (req, res) => {
     const goal = await Goal.findById(req.params.goalId);
     if (!goal) return res.status(404).json({ message: "Goal not found" });
 
+    const wasCompleted = goal.status === "completed";
     // Toggle status
     goal.status = goal.status === "pending" ? "completed" : "pending";
     await goal.save();
+
+    // Create notification if goal was just completed
+    if (!wasCompleted && goal.status === "completed") {
+      const notification = new Notification({
+        userId: goal.userId,
+        type: "achievementAlerts",
+        message: `🎉 Congratulations! You achieved your goal: "${goal.title}"`
+      });
+      await notification.save();
+    }
 
     res.json(goal);
   } catch (err) {
@@ -67,6 +79,7 @@ router.put("/:goalId/progress", authMiddleware, async (req, res) => {
       return res.status(400).json({ message: "Progress value cannot be negative" });
     }
 
+    const wasCompleted = goal.status === "completed";
     goal.currentValue = currentValue;
 
     // Auto-complete goal if target reached
@@ -75,6 +88,17 @@ router.put("/:goalId/progress", authMiddleware, async (req, res) => {
     }
 
     await goal.save();
+
+    // Create notification if goal was just completed
+    if (!wasCompleted && goal.status === "completed") {
+      const notification = new Notification({
+        userId: goal.userId,
+        type: "achievementAlerts",
+        message: `🎉 Congratulations! You achieved your goal: "${goal.title}"`
+      });
+      await notification.save();
+    }
+
     res.json(goal);
   } catch (err) {
     console.error(err);

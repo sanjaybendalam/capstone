@@ -1,67 +1,72 @@
 import React, { useState, useEffect } from "react";
-import NotificationSettings from "../components/notifications/NotificationSettings";
 import NotificationList from "../components/notifications/NotificationList";
-import { getNotifications } from "../services/api";
+import { getNotifications, cleanupBrokenNotifications } from "../services/api";
+import { Link } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const Notifications = () => {
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState("notifications");
+
+    const fetchNotifications = async () => {
+        try {
+            setLoading(true);
+            const res = await getNotifications();
+            setNotifications(res.data?.notifications || []);
+        } catch (err) {
+            console.error("Error fetching notifications:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchNotifications = async () => {
-            try {
-                setLoading(true);
-                const res = await getNotifications();
-                setNotifications(res.data?.notifications || []);
-            } catch (err) {
-                console.error("Error fetching notifications:", err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchNotifications();
     }, []);
 
+    const handleCleanup = async () => {
+        try {
+            const res = await cleanupBrokenNotifications();
+            toast.success(res.data?.message || "Cleaned up broken notifications");
+            fetchNotifications(); // Refresh the list
+        } catch (err) {
+            toast.error("Failed to cleanup notifications");
+        }
+    };
+
+    // Check if there are any broken notifications
+    const hasBrokenNotifications = notifications.some(n =>
+        n.message?.toLowerCase().includes("undefined")
+    );
+
     return (
         <div className="container py-4">
-            <h2 className="mb-4">🔔 Notifications</h2>
+            <div className="d-flex justify-content-between align-items-center mb-4">
+                <h2 className="mb-0">🔔 All Notifications</h2>
+                <div className="d-flex gap-2">
+                    {hasBrokenNotifications && (
+                        <button
+                            className="btn btn-outline-warning btn-sm"
+                            onClick={handleCleanup}
+                        >
+                            🧹 Fix Broken Notifications
+                        </button>
+                    )}
+                    <Link to="/profile" className="btn btn-outline-success btn-sm">
+                        ⚙️ Notification Settings
+                    </Link>
+                </div>
+            </div>
 
-            {/* Tab Navigation */}
-            <ul className="nav nav-tabs mb-4">
-                <li className="nav-item">
-                    <button
-                        className={`nav-link ${activeTab === "notifications" ? "active" : ""}`}
-                        onClick={() => setActiveTab("notifications")}
-                    >
-                        Notifications
-                    </button>
-                </li>
-                <li className="nav-item">
-                    <button
-                        className={`nav-link ${activeTab === "settings" ? "active" : ""}`}
-                        onClick={() => setActiveTab("settings")}
-                    >
-                        Settings
-                    </button>
-                </li>
-            </ul>
-
-            {/* Tab Content */}
-            {activeTab === "notifications" ? (
-                loading ? (
-                    <div className="text-center py-5">
-                        <div className="spinner-border text-primary" role="status">
-                            <span className="visually-hidden">Loading...</span>
-                        </div>
-                        <p className="mt-2 text-muted">Loading notifications...</p>
+            {loading ? (
+                <div className="text-center py-5">
+                    <div className="spinner-border text-primary" role="status">
+                        <span className="visually-hidden">Loading...</span>
                     </div>
-                ) : (
-                    <NotificationList notifications={notifications} />
-                )
+                    <p className="mt-2 text-muted">Loading notifications...</p>
+                </div>
             ) : (
-                <NotificationSettings />
+                <NotificationList notifications={notifications} />
             )}
         </div>
     );

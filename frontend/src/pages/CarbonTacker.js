@@ -64,7 +64,7 @@ const CarbonTracker = () => {
     return total.toFixed(2);
   };
 
-  // Calculate CO2 by category
+  // Calculate CO2 by category from current entries
   const calculateCO2ByCategory = () => {
     const byCategory = { Transportation: 0, Energy: 0, Food: 0, Waste: 0 };
     for (const [key, value] of Object.entries(entries)) {
@@ -73,6 +73,27 @@ const CarbonTracker = () => {
         byCategory[cat] += value * EMISSION_FACTORS[key].factor;
       }
     }
+    return byCategory;
+  };
+
+  // Calculate CO2 by category from saved historical data
+  const calculateSavedCO2ByCategory = () => {
+    const byCategory = { Transportation: 0, Energy: 0, Food: 0, Waste: 0 };
+    const categoryMapping = {
+      electricity: "Energy",
+      transport: "Transportation",
+      flight: "Transportation",
+      fuel: "Energy",
+      food: "Food",
+      waste: "Waste"
+    };
+
+    savedData.forEach(entry => {
+      const cat = categoryMapping[entry.category] || "Other";
+      if (byCategory[cat] !== undefined) {
+        byCategory[cat] += entry.calculatedCO2 || 0;
+      }
+    });
     return byCategory;
   };
 
@@ -87,9 +108,11 @@ const CarbonTracker = () => {
 
     setLoading(true);
     try {
-      const response = await saveCarbonEntries(entries);
+      await saveCarbonEntries(entries);
       toast.success("Carbon entries saved successfully!");
-      setSavedData(response.data);
+      // Fetch updated data after save
+      const res = await getCarbonEntries();
+      setSavedData(res.data || []);
       setEntries({}); // Clear form after save
     } catch (err) {
       toast.error("Failed to save entries");
@@ -112,7 +135,10 @@ const CarbonTracker = () => {
   }, []);
 
   const categories = ["All", "Transportation", "Energy", "Food", "Waste"];
-  const co2ByCategory = calculateCO2ByCategory();
+
+  // Use current entries if available, otherwise use saved data for display
+  const hasCurrentEntries = Object.values(entries).some(v => v > 0);
+  const co2ByCategory = hasCurrentEntries ? calculateCO2ByCategory() : calculateSavedCO2ByCategory();
   const highestCategory = Object.entries(co2ByCategory).sort((a, b) => b[1] - a[1])[0];
 
   return (
@@ -211,8 +237,8 @@ const CarbonTracker = () => {
                   <div className="progress" style={{ height: "8px" }}>
                     <div
                       className={`progress-bar ${cat === "Transportation" ? "bg-primary" :
-                          cat === "Energy" ? "bg-warning" :
-                            cat === "Food" ? "bg-success" : "bg-danger"
+                        cat === "Energy" ? "bg-warning" :
+                          cat === "Food" ? "bg-success" : "bg-danger"
                         }`}
                       style={{ width: `${Math.min((value / 20) * 100, 100)}%` }}
                     />

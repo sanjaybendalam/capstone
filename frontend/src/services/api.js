@@ -55,8 +55,25 @@ export const searchTips = async (query) => {
   return res.data;
 };
 
+export const getOrganizationTips = async () => {
+  const token = localStorage.getItem("token");
+  const res = await API.get("/tips/organization", { headers: { Authorization: `Bearer ${token}` } });
+  return res.data;
+};
+
 export const getNotifications = () => API.get("/notifications");
 export const saveNotificationSettings = (settings) => API.post("/notifications/settings", { settings });
+export const markNotificationsAsRead = () => API.put("/notifications/read");
+export const cleanupBrokenNotifications = () => API.delete("/notifications/cleanup");
+export const deleteAllNotifications = () => API.delete("/notifications/all");
+
+// Business Dashboard API
+export const getBusinessEmployees = () => API.get("/business/employees");
+export const getEmployeeDetails = (userId) => API.get(`/business/employee/${userId}`);
+export const sendEmployeeAlert = (userId, message) => API.post(`/business/alert/${userId}`, { message });
+export const getJoinCode = () => API.get("/business/join-code");
+export const updateOrganizationName = (name) => API.put("/business/organization-name", { organizationName: name });
+export const joinOrganization = (joinCode) => API.post("/business/join", { joinCode });
 
 
 // Default export for backward compatibility

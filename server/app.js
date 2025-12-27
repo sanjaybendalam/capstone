@@ -5,6 +5,7 @@ const connectDB = require("./config/db");
 const goalRoutes = require("./routes/goalRoutes");
 const tipRoutes = require("./routes/tipRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
+const { startReminderScheduler } = require("./services/reminderScheduler");
 
 connectDB();
 
@@ -18,8 +19,13 @@ app.use("/api/carbon", require("./routes/carbonRoutes"));
 app.use("/api/goals", goalRoutes); // <-- Goals
 app.use("/api/tips", tipRoutes);   // <-- Community / Tips
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/business", require("./routes/businessRoutes")); // <-- Business Dashboard
 
 
-app.listen(process.env.PORT, () =>
-  console.log(`Server running on port ${process.env.PORT}`)
-);
+app.listen(process.env.PORT, () => {
+  console.log(`Server running on port ${process.env.PORT}`);
+
+  // Start the goal deadline reminder scheduler
+  startReminderScheduler();
+});
+

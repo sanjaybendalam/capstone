@@ -1,0 +1,260 @@
+.notification-dropdown-container {
+  position: relative;
+  display: inline-block;
+}
+
+.notification-bell-btn {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  padding: 8px 12px;
+  position: relative;
+  transition: all 0.2s ease;
+  border-radius: 50%;
+}
+
+.notification-bell-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #28a745;
+}
+
+.notification-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: #dc3545;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 2px 5px;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
+  line-height: 1.2;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.notification-dropdown-panel {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 360px;
+  max-width: 90vw;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  z-index: 1050;
+  overflow: hidden;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.notification-dropdown-header {
+  padding: 14px 16px;
+  background: #1a1a1a;
+  color: white;
+  border-bottom: 1px solid #333;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notification-dropdown-header h6 {
+  font-weight: 600;
+  font-size: 1rem;
+  margin: 0;
+  color: #28a745;
+}
+
+.notification-count-badge {
+  background: #28a745;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 12px;
+}
+
+.notification-dropdown-body {
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+.notification-dropdown-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.notification-dropdown-body::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+.notification-dropdown-body::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 3px;
+}
+
+.notification-dropdown-body::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.notification-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+}
+
+.notification-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: #888;
+  text-align: center;
+}
+
+.notification-empty-icon {
+  font-size: 3rem;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.notification-empty p {
+  margin: 0;
+  font-size: 1rem;
+  color: #aaa;
+}
+
+.notification-empty small {
+  color: #666;
+}
+
+.notification-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.notification-item {
+  display: flex;
+  padding: 14px 16px;
+  border-bottom: 1px solid #2a2a2a;
+  transition: background 0.2s ease;
+  cursor: pointer;
+}
+
+.notification-item:hover {
+  background: #252525;
+}
+
+.notification-item.unread {
+  background: rgba(40, 167, 69, 0.08);
+  border-left: 3px solid #28a745;
+}
+
+.notification-item.unread:hover {
+  background: rgba(40, 167, 69, 0.12);
+}
+
+.notification-icon {
+  font-size: 1.5rem;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.notification-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-message {
+  margin: 0 0 4px 0;
+  color: #e0e0e0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+.notification-time {
+  font-size: 0.7rem;
+  color: #888;
+}
+
+.notification-dropdown-footer {
+  padding: 10px 16px;
+  background: #1a1a1a;
+  border-top: 1px solid #333;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notification-footer-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.notification-footer-btn {
+  background: transparent;
+  border: 1px solid #444;
+  color: #aaa;
+  font-size: 0.75rem;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.notification-footer-btn:hover {
+  background: #333;
+  color: #fff;
+  border-color: #555;
+}
+
+.notification-clear-btn {
+  color: #ff6b6b;
+  border-color: rgba(255, 107, 107, 0.3);
+}
+
+.notification-clear-btn:hover {
+  background: rgba(255, 107, 107, 0.15);
+  color: #ff6b6b;
+  border-color: #ff6b6b;
+}
+
+.view-all-link {
+  color: #28a745;
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.view-all-link:hover {
+  color: #34d058;
+}

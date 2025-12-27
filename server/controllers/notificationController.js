@@ -75,3 +75,20 @@ exports.saveSettings = async (req, res) => {
     res.status(500).json({ message: "Failed to save settings" });
   }
 };
+
+// Mark all notifications as read
+exports.markAsRead = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    await Notification.updateMany(
+      { userId, read: false },
+      { read: true }
+    );
+
+    res.json({ message: "Notifications marked as read" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to mark notifications as read" });
+  }
+};

@@ -22,6 +22,16 @@ const GoalCard = ({ goal, onToggle, onUpdateProgress, onDelete }) => {
   const isCompleted = goal.status === "completed";
   const daysLeft = Math.ceil((new Date(goal.deadline) - new Date()) / (1000 * 60 * 60 * 24));
   const isOverdue = daysLeft < 0 && !isCompleted;
+  const isAutoTracked = !!goal.category; // Has category = auto-tracked
+
+  const categoryLabels = {
+    electricity: "⚡ Electricity",
+    transport: "🚗 Transport",
+    flight: "✈️ Flights",
+    fuel: "🔥 Fuel",
+    food: "🍽️ Food",
+    waste: "🗑️ Waste"
+  };
 
   return (
     <>
@@ -43,6 +53,11 @@ const GoalCard = ({ goal, onToggle, onUpdateProgress, onDelete }) => {
                   📅 Deadline: {new Date(goal.deadline).toLocaleDateString()}
                   {!isCompleted && (daysLeft >= 0 ? ` (${daysLeft} days left)` : ` (${Math.abs(daysLeft)} days overdue)`)}
                 </small>
+                {isAutoTracked && (
+                  <span className="badge bg-info ms-2">
+                    {categoryLabels[goal.category]} - Auto
+                  </span>
+                )}
               </p>
 
               {/* Enhanced Progress Bar */}
@@ -58,29 +73,20 @@ const GoalCard = ({ goal, onToggle, onUpdateProgress, onDelete }) => {
 
           {/* Actions */}
           <div className="d-flex gap-2 flex-wrap">
-            {!isCompleted && (
-              <button
-                className="btn btn-primary btn-sm"
-                onClick={() => {
-                  setNewProgress(goal.currentValue);
-                  setShowUpdateModal(true);
-                }}
-              >
-                📝 Update Progress
-              </button>
-            )}
             <button
               className={`btn btn-sm ${isCompleted ? 'btn-outline-warning' : 'btn-success'}`}
               onClick={() => onToggle(goal._id)}
             >
               {isCompleted ? '↩ Reopen' : '✓ Mark Complete'}
             </button>
-            <button
-              className="btn btn-outline-danger btn-sm"
-              onClick={() => setShowDeleteConfirm(true)}
-            >
-              🗑️ Delete
-            </button>
+            {!isCompleted && (
+              <button
+                className="btn btn-outline-danger btn-sm"
+                onClick={() => setShowDeleteConfirm(true)}
+              >
+                🗑️ Delete
+              </button>
+            )}
           </div>
         </div>
       </div>

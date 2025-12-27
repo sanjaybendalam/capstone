@@ -1,7 +1,7 @@
 // src/pages/Profile.jsx
 import React, { useEffect, useState, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
-import { getMyGoals, getCarbonEntries } from "../services/api";
+import { getMyGoals, getCarbonEntries, getNotifications, saveNotificationSettings, joinOrganization } from "../services/api";
 import { toast } from "react-toastify";
 
 const Profile = () => {
@@ -20,6 +20,8 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("profile");
+  const [joinCode, setJoinCode] = useState("");
+  const [joiningOrg, setJoiningOrg] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -31,21 +33,31 @@ const Profile = () => {
       // Fetch goals to calculate stats
       const goals = await getMyGoals();
       const goalsData = goals.data || [];
-      
+
       // Fetch carbon entries
       const carbonRes = await getCarbonEntries();
       const carbonData = carbonRes.data || [];
-      
+
+      // Fetch notification settings
+      const notifRes = await getNotifications();
+      if (notifRes.data?.settings) {
+        setNotificationSettings({
+          goalReminders: notifRes.data.settings.goalReminders ?? true,
+          achievementAlerts: notifRes.data.settings.achievementAlerts ?? true,
+          businessAlerts: notifRes.data.settings.businessAlerts ?? false,
+        });
+      }
+
       // Calculate total CO2 tracked
       const totalCO2 = carbonData.reduce((sum, entry) => sum + (entry.calculatedCO2 || 0), 0);
-      
+
       setStats({
         totalGoals: goalsData.length,
         completedGoals: goalsData.filter(g => g.status === "completed").length,
         totalCO2Tracked: totalCO2.toFixed(1),
         memberSince: "Dec 2024"
       });
-      
+
       setLoading(false);
     } catch (error) {
       console.error("Failed to fetch user data", error);
@@ -62,13 +74,29 @@ const Profile = () => {
     e.preventDefault();
     setSaving(true);
     try {
-      // Simulate save
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await saveNotificationSettings(notificationSettings);
       toast.success("Settings saved successfully! ✅");
     } catch (error) {
       toast.error("Failed to save settings");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleJoinOrganization = async () => {
+    if (!joinCode.trim()) {
+      toast.warning("Please enter an organization code");
+      return;
+    }
+    try {
+      setJoiningOrg(true);
+      const res = await joinOrganization(joinCode);
+      toast.success(res.data.message || "Successfully joined organization!");
+      setJoinCode("");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to join organization");
+    } finally {
+      setJoiningOrg(false);
     }
   };
 
@@ -90,7 +118,7 @@ const Profile = () => {
           <div className="card bg-success text-white">
             <div className="card-body p-4">
               <div className="d-flex align-items-center">
-                <div 
+                <div
                   className="rounded-circle bg-white text-success d-flex align-items-center justify-content-center me-4"
                   style={{ width: "80px", height: "80px", fontSize: "2rem" }}
                 >
@@ -110,71 +138,85 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="col-12 mb-4">
-          <div className="row g-3">
-            <div className="col-md-3 col-6">
-              <div className="card text-center h-100">
-                <div className="card-body">
-                  <h3 className="text-success">{stats.totalGoals}</h3>
-                  <small className="text-muted">Total Goals</small>
+        {/* Stats Cards - Only for regular users */}
+        {user?.role !== "business" && (
+          <div className="col-12 mb-4">
+            <div className="row g-3">
+              <div className="col-md-3 col-6">
+                <div className="card text-center h-100">
+                  <div className="card-body">
+                    <h3 className="text-success">{stats.totalGoals}</h3>
+                    <small className="text-muted">Total Goals</small>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="col-md-3 col-6">
-              <div className="card text-center h-100">
-                <div className="card-body">
-                  <h3 className="text-success">{stats.completedGoals}</h3>
-                  <small className="text-muted">Completed</small>
+              <div className="col-md-3 col-6">
+                <div className="card text-center h-100">
+                  <div className="card-body">
+                    <h3 className="text-success">{stats.completedGoals}</h3>
+                    <small className="text-muted">Completed</small>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="col-md-3 col-6">
-              <div className="card text-center h-100">
-                <div className="card-body">
-                  <h3 className="text-success">{stats.totalCO2Tracked}</h3>
-                  <small className="text-muted">kg CO2 Tracked</small>
+              <div className="col-md-3 col-6">
+                <div className="card text-center h-100">
+                  <div className="card-body">
+                    <h3 className="text-success">{stats.totalCO2Tracked}</h3>
+                    <small className="text-muted">kg CO2 Tracked</small>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="col-md-3 col-6">
-              <div className="card text-center h-100">
-                <div className="card-body">
-                  <h3 className="text-success">🏆</h3>
-                  <small className="text-muted">{stats.memberSince}</small>
+              <div className="col-md-3 col-6">
+                <div className="card text-center h-100">
+                  <div className="card-body">
+                    <h3 className="text-success">🏆</h3>
+                    <small className="text-muted">{stats.memberSince}</small>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Tab Navigation */}
         <div className="col-12 mb-3">
           <ul className="nav nav-pills">
             <li className="nav-item">
-              <button 
+              <button
                 className={`nav-link ${activeTab === "profile" ? "active bg-success" : ""}`}
                 onClick={() => setActiveTab("profile")}
               >
                 👤 Profile Info
               </button>
             </li>
-            <li className="nav-item">
-              <button 
-                className={`nav-link ${activeTab === "notifications" ? "active bg-success" : ""}`}
-                onClick={() => setActiveTab("notifications")}
-              >
-                🔔 Notifications
-              </button>
-            </li>
-            <li className="nav-item">
-              <button 
-                className={`nav-link ${activeTab === "achievements" ? "active bg-success" : ""}`}
-                onClick={() => setActiveTab("achievements")}
-              >
-                🏅 Achievements
-              </button>
-            </li>
+            {user?.role !== "business" && (
+              <>
+                <li className="nav-item">
+                  <button
+                    className={`nav-link ${activeTab === "notifications" ? "active bg-success" : ""}`}
+                    onClick={() => setActiveTab("notifications")}
+                  >
+                    🔔 Notifications
+                  </button>
+                </li>
+                <li className="nav-item">
+                  <button
+                    className={`nav-link ${activeTab === "achievements" ? "active bg-success" : ""}`}
+                    onClick={() => setActiveTab("achievements")}
+                  >
+                    🏅 Achievements
+                  </button>
+                </li>
+                <li className="nav-item">
+                  <button
+                    className={`nav-link ${activeTab === "organization" ? "active bg-success" : ""}`}
+                    onClick={() => setActiveTab("organization")}
+                  >
+                    🏢 Organization
+                  </button>
+                </li>
+              </>
+            )}
           </ul>
         </div>
 
@@ -189,40 +231,40 @@ const Profile = () => {
                 <div className="row mb-3">
                   <div className="col-md-6">
                     <label className="form-label">Full Name</label>
-                    <input 
-                      type="text" 
-                      className="form-control" 
-                      value={user?.name || ""} 
-                      disabled 
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={user?.name || ""}
+                      disabled
                     />
                   </div>
                   <div className="col-md-6">
                     <label className="form-label">Email Address</label>
-                    <input 
-                      type="email" 
-                      className="form-control" 
-                      value={user?.email || "Not available"} 
-                      disabled 
+                    <input
+                      type="email"
+                      className="form-control"
+                      value={user?.email || "Not available"}
+                      disabled
                     />
                   </div>
                 </div>
                 <div className="row mb-3">
                   <div className="col-md-6">
                     <label className="form-label">Account Type</label>
-                    <input 
-                      type="text" 
-                      className="form-control" 
-                      value={user?.role === "business" ? "Business" : "Personal"} 
-                      disabled 
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={user?.role === "business" ? "Business" : "Personal"}
+                      disabled
                     />
                   </div>
                   <div className="col-md-6">
                     <label className="form-label">Member Since</label>
-                    <input 
-                      type="text" 
-                      className="form-control" 
-                      value={stats.memberSince} 
-                      disabled 
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={stats.memberSince}
+                      disabled
                     />
                   </div>
                 </div>
@@ -317,7 +359,7 @@ const Profile = () => {
                       </div>
                     </div>
                   )}
-                  
+
                   {parseFloat(stats.totalCO2Tracked) > 0 && (
                     <div className="col-md-4">
                       <div className="card bg-primary text-white text-center">
@@ -329,7 +371,7 @@ const Profile = () => {
                       </div>
                     </div>
                   )}
-                  
+
                   <div className="col-md-4">
                     <div className="card bg-info text-white text-center">
                       <div className="card-body">
@@ -354,9 +396,55 @@ const Profile = () => {
               </div>
             </div>
           )}
+
+          {activeTab === "organization" && (
+            <div className="card">
+              <div className="card-header">
+                <h5 className="mb-0">🏢 Join Your Organization</h5>
+              </div>
+              <div className="card-body">
+                <p className="text-muted mb-4">
+                  If your employer uses Ecotrackify for business sustainability tracking,
+                  enter the organization code they provided to link your account.
+                </p>
+                <div className="row">
+                  <div className="col-md-6">
+                    <div className="mb-3">
+                      <label className="form-label">Organization Join Code</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Enter your organization's code"
+                        value={joinCode}
+                        onChange={(e) => setJoinCode(e.target.value)}
+                      />
+                      <small className="text-muted">Ask your employer for this code</small>
+                    </div>
+                    <button
+                      className="btn btn-success"
+                      onClick={handleJoinOrganization}
+                      disabled={joiningOrg}
+                    >
+                      {joiningOrg ? "Joining..." : "🔗 Join Organization"}
+                    </button>
+                  </div>
+                  <div className="col-md-6">
+                    <div className="alert alert-info">
+                      <h6>📋 What happens when you join?</h6>
+                      <ul className="mb-0 small">
+                        <li>Your carbon tracking data will be visible to your employer</li>
+                        <li>You may receive sustainability tips from your organization</li>
+                        <li>Your employer can send you carbon reduction reminders</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 };
 
