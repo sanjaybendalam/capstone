@@ -34,7 +34,11 @@ const Community = () => {
 
   const handleAddTip = (tip) => {
     setTips([tip, ...tips]);
-    toast.success("🌱 Your eco tip has been shared with the community!");
+    if (isBusiness) {
+      toast.success("Tip shared with your organization!");
+    } else {
+      toast.success("Your tip has been shared!");
+    }
   };
 
   const handleLike = async (id) => {
@@ -42,7 +46,7 @@ const Community = () => {
       const updated = await likeTip(id);
       setTips(tips.map((t) => (t._id === id ? updated : t)));
     } catch (err) {
-      toast.error("Failed to like tip");
+      toast.error("Failed to update like");
     }
   };
 
@@ -56,7 +60,6 @@ const Community = () => {
     try {
       setSearching(true);
       const data = await searchTips(searchQuery);
-      // For business, filter to only org employees (client-side filter for search)
       setTips(data || []);
       if (data.length === 0) {
         toast.info("No tips found matching your search");
@@ -75,13 +78,13 @@ const Community = () => {
   };
 
   return (
-    <div className="container mt-4">
-      <h2 className="mb-4">
-        {isBusiness ? "🏢 Organization Eco Tips" : "🌿 Community Eco Tips"}
+    <div className="container py-4">
+      <h2 className="mb-2">
+        {isBusiness ? "Organization Tips" : "Community Tips"}
       </h2>
       <p className="text-muted mb-4">
         {isBusiness
-          ? "View sustainability tips shared by your organization's employees."
+          ? "Share and view sustainability tips within your organization."
           : "Share your sustainability tips and learn from the community!"}
       </p>
 
@@ -93,7 +96,7 @@ const Community = () => {
               <input
                 type="text"
                 className="form-control"
-                placeholder="🔍 Search tips by keyword..."
+                placeholder="Search tips by keyword..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -118,21 +121,26 @@ const Community = () => {
         </div>
       )}
 
-      {/* Share Tip Form - Only for regular users */}
-      {!isBusiness && (
-        <div className="card mb-4">
-          <div className="card-header bg-success text-white">
-            <h5 className="mb-0">💡 Share Your Eco Tip</h5>
-          </div>
-          <div className="card-body">
-            <ShareTipForm onAdd={handleAddTip} />
-          </div>
+      {/* Share Tip Form - For both regular users AND business users */}
+      <div className="card mb-4">
+        <div className="card-header bg-success text-white">
+          <h5 className="mb-0">
+            {isBusiness ? "Share Tip with Organization" : "Share Your Eco Tip"}
+          </h5>
         </div>
-      )}
+        <div className="card-body">
+          <ShareTipForm onAdd={handleAddTip} />
+          {isBusiness && (
+            <small className="text-muted d-block mt-2">
+              This tip will only be visible to employees in your organization.
+            </small>
+          )}
+        </div>
+      </div>
 
       {/* Tips List */}
       <h4 className="mb-3">
-        📝 {isBusiness ? "Employee" : "Community"} Tips ({tips.length})
+        {isBusiness ? "Organization" : "Community"} Tips ({tips.length})
       </h4>
 
       {loading ? (
@@ -146,7 +154,7 @@ const Community = () => {
           <h5>No tips yet!</h5>
           <p>
             {isBusiness
-              ? "Your employees haven't shared any tips yet."
+              ? "Share a tip with your organization or wait for employees to contribute."
               : "Be the first to share an eco-friendly tip with the community."}
           </p>
         </div>
@@ -164,4 +172,3 @@ const Community = () => {
 };
 
 export default Community;
-

@@ -9,6 +9,8 @@ const TipCard = ({ tip, onLike, showEmail = false }) => {
     ? tip.authorId.email
     : null;
 
+  const isLiked = tip.isLiked || false;
+
   return (
     <div className="card h-100">
       <div className="card-body">
@@ -27,9 +29,14 @@ const TipCard = ({ tip, onLike, showEmail = false }) => {
           )}
         </small>
         <div className="mt-2 d-flex justify-content-between align-items-center">
-          <span>❤️ {tip.likes || 0}</span>
-          <button className="btn btn-sm btn-outline-success" onClick={() => onLike(tip._id)}>
-            👍 Like
+          <span className={isLiked ? "text-danger" : "text-muted"}>
+            {isLiked ? "♥" : "♡"} {tip.likes || 0} {tip.likes === 1 ? "like" : "likes"}
+          </span>
+          <button
+            className={`btn btn-sm ${isLiked ? "btn-danger" : "btn-outline-secondary"}`}
+            onClick={() => onLike(tip._id)}
+          >
+            {isLiked ? "Unlike" : "Like"}
           </button>
         </div>
       </div>
@@ -38,4 +45,3 @@ const TipCard = ({ tip, onLike, showEmail = false }) => {
 };
 
 export default TipCard;
-
