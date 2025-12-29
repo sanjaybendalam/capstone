@@ -75,5 +75,35 @@ async function updateGoalProgress(userId) {
   }
 }
 
+// Delete today's carbon entries
+router.delete("/today", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Get start and end of today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // Delete all entries from today using 'date' field
+    const result = await CarbonEntry.deleteMany({
+      userId,
+      date: { $gte: today, $lt: tomorrow }
+    });
+
+    // Update goal progress after deletion
+    await updateGoalProgress(userId);
+
+    res.json({
+      message: `Deleted ${result.deletedCount} entries from today`,
+      deletedCount: result.deletedCount
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to delete today's entries" });
+  }
+});
+
 module.exports = router;
 

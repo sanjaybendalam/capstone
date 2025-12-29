@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
-import { getCarbonEntries, getMyGoals } from "../services/api";
+import { getCarbonEntries, getMyGoals, getTips } from "../services/api";
 import DashboardCharts from "../components/dashboard/DashboardCharts";
 import AchievementCard from "../components/dashboard/AchievementCard";
 import "../styles/theme.css";
@@ -11,6 +11,7 @@ const Dashboard = () => {
   const { user } = useContext(AuthContext);
   const [carbonData, setCarbonData] = useState([]);
   const [goals, setGoals] = useState([]);
+  const [tips, setTips] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,6 +25,14 @@ const Dashboard = () => {
         // Fetch user goals
         const goalsRes = await getMyGoals();
         setGoals(goalsRes.data || []);
+
+        // Fetch tips for display
+        try {
+          const tipsData = await getTips();
+          setTips(tipsData || []);
+        } catch (tipErr) {
+          console.log("Tips not available:", tipErr);
+        }
       } catch (err) {
         console.error("Error fetching dashboard data:", err);
       } finally {
@@ -51,7 +60,7 @@ const Dashboard = () => {
       ) : (
         <>
           {/* Charts and Progress Section */}
-          <DashboardCharts carbonData={carbonData} goals={goals} />
+          <DashboardCharts carbonData={carbonData} goals={goals} tips={tips} />
 
           {/* Achievements Section */}
           <AchievementCard achievements={achievements} />

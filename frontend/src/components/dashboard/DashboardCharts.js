@@ -1,9 +1,17 @@
 import React from "react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, ReferenceLine } from "recharts";
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#AA336A", "#FF4444", "#44AAFF", "#44FFAA"];
 
-const DashboardCharts = ({ carbonData, goals }) => {
+// Daily carbon emission threshold (kg CO2) - emissions above this trigger warnings
+const DAILY_THRESHOLD = 10;
+
+const DashboardCharts = ({ carbonData, goals, tips = [] }) => {
+    // Get today's date in sortKey format for comparison
+    const getTodaySortKey = () => {
+        return new Date().toISOString().split('T')[0];
+    };
+
     // Process carbon data for line chart - group by date
     const processLineChartData = () => {
         if (!carbonData || carbonData.length === 0) return [];
@@ -37,7 +45,9 @@ const DashboardCharts = ({ carbonData, goals }) => {
             .slice(-7)
             .map(item => ({
                 date: item.date,
-                emissions: parseFloat(item.emissions.toFixed(2))
+                sortKey: item.sortKey,
+                emissions: parseFloat(item.emissions.toFixed(2)),
+                isAboveThreshold: item.emissions > DAILY_THRESHOLD
             }));
     };
 
@@ -58,8 +68,56 @@ const DashboardCharts = ({ carbonData, goals }) => {
         }));
     };
 
+    // Custom dot renderer for threshold-based coloring
+    const CustomDot = (props) => {
+        const { cx, cy, payload } = props;
+        const color = payload.isAboveThreshold ? "#dc3545" : "#28a745";
+        return (
+            <circle cx={cx} cy={cy} r={6} fill={color} stroke="#fff" strokeWidth={2} />
+        );
+    };
+
+    // Custom line stroke that changes color based on threshold
+    const getLineGradientId = () => "lineGradient";
+
+    // Get random tips to display (up to 3)
+    const getRandomTips = () => {
+        if (!tips || tips.length === 0) return [];
+        const shuffled = [...tips].sort(() => 0.5 - Math.random());
+        return shuffled.slice(0, 3);
+    };
+
     const lineChartData = processLineChartData();
     const pieChartData = processPieChartData();
+    const randomTips = getRandomTips();
+    const todaySortKey = getTodaySortKey();
+
+    // Check if TODAY's emissions exceed threshold (not historical)
+    const todayData = lineChartData.find(d => d.sortKey === todaySortKey);
+    const isTodayAboveThreshold = todayData && todayData.isAboveThreshold;
+
+    // Calculate gradient stops for multi-color line
+    const calculateGradientStops = () => {
+        if (lineChartData.length === 0) return [];
+
+        const stops = [];
+        const totalPoints = lineChartData.length;
+
+        lineChartData.forEach((point, index) => {
+            const offset = (index / (totalPoints - 1)) * 100;
+            const color = point.isAboveThreshold ? "#dc3545" : "#28a745";
+
+            // Add stop for this segment
+            if (index > 0) {
+                stops.push({ offset: `${offset}%`, color });
+            }
+            stops.push({ offset: `${offset}%`, color });
+        });
+
+        return stops;
+    };
+
+    const gradientStops = calculateGradientStops();
 
     return (
         <div className="row mb-4">
@@ -67,27 +125,77 @@ const DashboardCharts = ({ carbonData, goals }) => {
             <div className="col-md-6 mb-4">
                 <div className="card h-100">
                     <div className="card-body">
-                        <h5 className="card-title">📈 Carbon Emissions Trend</h5>
+                        <h5 className="card-title">Carbon Emissions Trend</h5>
+
+                        {/* Alert only for TODAY's high emissions */}
+                        {isTodayAboveThreshold && (
+                            <div className="alert alert-danger py-2 mb-3" role="alert">
+                                <strong>Today's Emissions Alert!</strong> You exceeded the daily limit ({DAILY_THRESHOLD} kg CO2) today with {todayData.emissions} kg. Consider reducing your carbon footprint.
+                            </div>
+                        )}
+
                         {lineChartData.length > 0 ? (
                             <ResponsiveContainer width="100%" height={250}>
                                 <LineChart data={lineChartData}>
+                                    <defs>
+                                        <linearGradient id={getLineGradientId()} x1="0%" y1="0%" x2="100%" y2="0%">
+                                            {gradientStops.map((stop, index) => (
+                                                <stop key={index} offset={stop.offset} stopColor={stop.color} />
+                                            ))}
+                                        </linearGradient>
+                                    </defs>
                                     <CartesianGrid strokeDasharray="3 3" />
                                     <XAxis dataKey="date" fontSize={12} />
                                     <YAxis unit=" kg" fontSize={12} />
-                                    <Tooltip formatter={(value) => [`${value} kg CO2`, "Emissions"]} />
+                                    <Tooltip
+                                        formatter={(value, name, props) => {
+                                            const isHigh = props.payload.isAboveThreshold;
+                                            return [
+                                                `${value} kg CO2 ${isHigh ? '(ABOVE LIMIT!)' : '(OK)'}`,
+                                                "Emissions"
+                                            ];
+                                        }}
+                                    />
                                     <Legend />
+                                    {/* Threshold Reference Line */}
+                                    <ReferenceLine
+                                        y={DAILY_THRESHOLD}
+                                        stroke="#dc3545"
+                                        strokeDasharray="5 5"
+                                        strokeWidth={2}
+                                        label={{
+                                            value: `Limit: ${DAILY_THRESHOLD} kg`,
+                                            position: "right",
+                                            fill: "#dc3545",
+                                            fontSize: 11
+                                        }}
+                                    />
                                     <Line
                                         type="monotone"
                                         dataKey="emissions"
-                                        stroke="#28a745"
-                                        strokeWidth={2}
-                                        dot={{ fill: "#28a745" }}
+                                        stroke={`url(#${getLineGradientId()})`}
+                                        strokeWidth={3}
+                                        dot={<CustomDot />}
                                         name="CO2 Emissions"
                                     />
                                 </LineChart>
                             </ResponsiveContainer>
                         ) : (
                             <p className="text-muted">No carbon data available yet. Start tracking to see your progress!</p>
+                        )}
+
+                        {/* Tips Section */}
+                        {randomTips.length > 0 && (
+                            <div className="mt-3 pt-3 border-top">
+                                <h6 className="text-success mb-2">Sustainability Tips</h6>
+                                {randomTips.map((tip, index) => (
+                                    <div key={tip._id || index} className="mb-2 p-2 bg-light rounded">
+                                        <small className="text-dark">
+                                            <strong>{tip.author?.name || "Community"}:</strong> {tip.content}
+                                        </small>
+                                    </div>
+                                ))}
+                            </div>
                         )}
                     </div>
                 </div>
@@ -97,7 +205,7 @@ const DashboardCharts = ({ carbonData, goals }) => {
             <div className="col-md-6 mb-4">
                 <div className="card h-100">
                     <div className="card-body">
-                        <h5 className="card-title">🥧 Emissions by Category</h5>
+                        <h5 className="card-title">Emissions by Category</h5>
                         {pieChartData.length > 0 ? (
                             <ResponsiveContainer width="100%" height={250}>
                                 <PieChart>
@@ -129,7 +237,7 @@ const DashboardCharts = ({ carbonData, goals }) => {
             <div className="col-12">
                 <div className="card">
                     <div className="card-body">
-                        <h5 className="card-title">🎯 Goals Progress Overview</h5>
+                        <h5 className="card-title">Goals Progress Overview</h5>
                         {goals && goals.length > 0 ? (
                             <div className="row">
                                 {goals.slice(0, 4).map((goal) => {
@@ -140,7 +248,7 @@ const DashboardCharts = ({ carbonData, goals }) => {
                                             <div className={`card ${isCompleted ? 'border-success' : ''}`}>
                                                 <div className="card-body p-3">
                                                     <h6 className="card-title mb-2">
-                                                        {isCompleted && <span className="text-success">✓ </span>}
+                                                        {isCompleted && <span className="text-success">Done </span>}
                                                         {goal.title}
                                                     </h6>
                                                     <div className="progress mb-2" style={{ height: "10px" }}>
