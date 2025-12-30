@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
-import { getCarbonEntries, getMyGoals, getTips } from "../services/api";
+import { getCarbonEntries, getMyGoals, getAchievements } from "../services/api";
 import DashboardCharts from "../components/dashboard/DashboardCharts";
 import AchievementCard from "../components/dashboard/AchievementCard";
 import "../styles/theme.css";
@@ -11,7 +11,7 @@ const Dashboard = () => {
   const { user } = useContext(AuthContext);
   const [carbonData, setCarbonData] = useState([]);
   const [goals, setGoals] = useState([]);
-  const [tips, setTips] = useState([]);
+  const [achievements, setAchievements] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,12 +26,12 @@ const Dashboard = () => {
         const goalsRes = await getMyGoals();
         setGoals(goalsRes.data || []);
 
-        // Fetch tips for display
+        // Fetch achievements
         try {
-          const tipsData = await getTips();
-          setTips(tipsData || []);
-        } catch (tipErr) {
-          console.log("Tips not available:", tipErr);
+          const achievementsRes = await getAchievements();
+          setAchievements(achievementsRes.data || []);
+        } catch (achErr) {
+          console.log("Achievements not available:", achErr);
         }
       } catch (err) {
         console.error("Error fetching dashboard data:", err);
@@ -42,9 +42,6 @@ const Dashboard = () => {
 
     fetchData();
   }, []);
-
-  // Filter completed goals for achievements
-  const achievements = goals.filter(goal => goal.status === "completed");
 
   return (
     <div className="container py-4">
@@ -60,7 +57,7 @@ const Dashboard = () => {
       ) : (
         <>
           {/* Charts and Progress Section */}
-          <DashboardCharts carbonData={carbonData} goals={goals} tips={tips} />
+          <DashboardCharts carbonData={carbonData} goals={goals} />
 
           {/* Achievements Section */}
           <AchievementCard achievements={achievements} />

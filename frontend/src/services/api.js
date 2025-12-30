@@ -28,6 +28,7 @@ export const getUserGoals = (userId) => API.get(`/goals/user/${userId}`);  // Le
 export const toggleGoal = (goalId) => API.put(`/goals/${goalId}/toggle`);
 export const updateGoalProgress = (goalId, currentValue) => API.put(`/goals/${goalId}/progress`, { currentValue });
 export const deleteGoal = (goalId) => API.delete(`/goals/${goalId}`);
+export const getAchievements = () => API.get("/goals/achievements");
 
 
 

@@ -81,6 +81,17 @@ const GoalCard = ({ goal, onToggle, onUpdateProgress, onDelete }) => {
             </button>
             {!isCompleted && (
               <button
+                className="btn btn-outline-primary btn-sm"
+                onClick={() => {
+                  setNewProgress(goal.currentValue);
+                  setShowUpdateModal(true);
+                }}
+              >
+                📝 Update Progress
+              </button>
+            )}
+            {!isCompleted && (
+              <button
                 className="btn btn-outline-danger btn-sm"
                 onClick={() => setShowDeleteConfirm(true)}
               >

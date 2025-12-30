@@ -6,7 +6,7 @@ const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#AA336A", "#FF4444"
 // Daily carbon emission threshold (kg CO2) - emissions above this trigger warnings
 const DAILY_THRESHOLD = 10;
 
-const DashboardCharts = ({ carbonData, goals, tips = [] }) => {
+const DashboardCharts = ({ carbonData, goals }) => {
     // Get today's date in sortKey format for comparison
     const getTodaySortKey = () => {
         return new Date().toISOString().split('T')[0];
@@ -80,10 +80,25 @@ const DashboardCharts = ({ carbonData, goals, tips = [] }) => {
     // Custom line stroke that changes color based on threshold
     const getLineGradientId = () => "lineGradient";
 
-    // Get random tips to display (up to 3)
+    // Static carbon reduction tips
+    const reductionTips = [
+        { id: 1, tip: "Switch to LED bulbs - they use 75% less energy than incandescent lights." },
+        { id: 2, tip: "Unplug electronics when not in use to avoid phantom energy drain." },
+        { id: 3, tip: "Use public transport or carpool to reduce your transport emissions." },
+        { id: 4, tip: "Reduce meat consumption - plant-based meals have a much lower carbon footprint." },
+        { id: 5, tip: "Air dry your clothes instead of using a dryer to save energy." },
+        { id: 6, tip: "Use a reusable water bottle and shopping bags to reduce waste." },
+        { id: 7, tip: "Set your thermostat 1-2 degrees lower in winter to save heating energy." },
+        { id: 8, tip: "Take shorter showers - heating water accounts for significant energy use." },
+        { id: 9, tip: "Choose local and seasonal produce to reduce food transportation emissions." },
+        { id: 10, tip: "Maintain your vehicle properly - well-tuned cars emit less CO2." },
+        { id: 11, tip: "Use natural light during the day instead of artificial lighting." },
+        { id: 12, tip: "Recycle and compost to reduce waste going to landfills." }
+    ];
+
+    // Get random reduction tips to display (3 tips)
     const getRandomTips = () => {
-        if (!tips || tips.length === 0) return [];
-        const shuffled = [...tips].sort(() => 0.5 - Math.random());
+        const shuffled = [...reductionTips].sort(() => 0.5 - Math.random());
         return shuffled.slice(0, 3);
     };
 
@@ -184,14 +199,17 @@ const DashboardCharts = ({ carbonData, goals, tips = [] }) => {
                             <p className="text-muted">No carbon data available yet. Start tracking to see your progress!</p>
                         )}
 
-                        {/* Tips Section */}
-                        {randomTips.length > 0 && (
+                        {/* Reduction Tips Section - Only show if today is above threshold */}
+                        {isTodayAboveThreshold && (
                             <div className="mt-3 pt-3 border-top">
-                                <h6 className="text-success mb-2">Sustainability Tips</h6>
-                                {randomTips.map((tip, index) => (
-                                    <div key={tip._id || index} className="mb-2 p-2 bg-light rounded">
+                                <h6 className="text-danger mb-2">💡 Tips to Reduce Your Emissions</h6>
+                                <p className="small text-muted mb-2">
+                                    You exceeded today's limit! Here are some tips to help:
+                                </p>
+                                {randomTips.map((item) => (
+                                    <div key={item.id} className="mb-2 p-2 bg-light rounded">
                                         <small className="text-dark">
-                                            <strong>{tip.author?.name || "Community"}:</strong> {tip.content}
+                                            ✓ {item.tip}
                                         </small>
                                     </div>
                                 ))}

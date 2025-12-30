@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Goal = require("../models/Goal");
 const Notification = require("../models/Notification");
+const Achievement = require("../models/Achievement");
 const authMiddleware = require("../middlewares/authMiddleware");
 
 // Create a goal
@@ -38,6 +39,18 @@ router.get("/user/:id", authMiddleware, async (req, res) => {
   }
 });
 
+// Get achievements for current user
+router.get("/achievements", authMiddleware, async (req, res) => {
+  try {
+    const achievements = await Achievement.find({ userId: req.user.id })
+      .sort({ completedAt: -1 });
+    res.json(achievements);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to fetch achievements" });
+  }
+});
+
 // Toggle goal completion status
 router.put("/:goalId/toggle", authMiddleware, async (req, res) => {
   try {
@@ -47,10 +60,29 @@ router.put("/:goalId/toggle", authMiddleware, async (req, res) => {
     const wasCompleted = goal.status === "completed";
     // Toggle status
     goal.status = goal.status === "pending" ? "completed" : "pending";
-    await goal.save();
 
-    // Create notification if goal was just completed
+    // If reopening a goal, reset progress to 0
+    if (wasCompleted && goal.status === "pending") {
+      goal.currentValue = 0;
+    }
+
+    // If completing a goal, create a permanent achievement record
     if (!wasCompleted && goal.status === "completed") {
+      // Set progress to 100% (currentValue = targetValue)
+      goal.currentValue = goal.targetValue;
+
+      // Create achievement record
+      const achievement = new Achievement({
+        userId: goal.userId,
+        goalId: goal._id,
+        title: goal.title,
+        targetValue: goal.targetValue,
+        unit: goal.unit,
+        completedAt: new Date()
+      });
+      await achievement.save();
+
+      // Create notification
       const notification = new Notification({
         userId: goal.userId,
         type: "achievementAlerts",
@@ -59,6 +91,7 @@ router.put("/:goalId/toggle", authMiddleware, async (req, res) => {
       await notification.save();
     }
 
+    await goal.save();
     res.json(goal);
   } catch (err) {
     console.error(err);

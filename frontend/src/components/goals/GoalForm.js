@@ -10,6 +10,17 @@ const GoalForm = ({ onSave }) => {
   });
   const [errors, setErrors] = useState({});
 
+  // Max CO2 values based on CarbonInputForm.js max slider values
+  // Calculated as: max input value × CO2 emission factor
+  const categoryMaxLimits = {
+    electricity: 41,    // 50 kWh × 0.82 = 41 kg CO2
+    transport: 100,     // (20L petrol × 2.31) + (20L diesel × 2.68) ≈ 100 kg CO2
+    flight: 195,        // (500km × 0.09) + (1000km × 0.15) = 195 kg CO2
+    fuel: 15,           // 5 kg LPG × 2.98 ≈ 15 kg CO2
+    food: 42,           // (1kg beef × 27) + (1kg chicken × 6.9) + (1kg rice × 4) + (2kg veg × 2) ≈ 42 kg CO2
+    waste: 5            // 5 kg waste × 1 = 5 kg CO2
+  };
+
   const categories = [
     { value: "electricity", label: "⚡ Electricity" },
     { value: "transport", label: "🚗 Transport (Petrol/Diesel)" },
@@ -19,12 +30,17 @@ const GoalForm = ({ onSave }) => {
     { value: "waste", label: "🗑️ Waste" }
   ];
 
+  // Get max limit for current category
+  const getMaxLimit = () => {
+    return categoryMaxLimits[form.category] || 100;
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
     // Auto-set unit to kg CO2 when category is selected
     if (name === "category") {
-      setForm({ ...form, [name]: value, unit: "kg CO2" });
+      setForm({ ...form, [name]: value, unit: "kg CO2", targetValue: "" });
     } else {
       setForm({ ...form, [name]: value });
     }
@@ -38,12 +54,14 @@ const GoalForm = ({ onSave }) => {
   const validateForm = () => {
     const newErrors = {};
 
-    // Validate target value - prevent unrealistic goals
+    // Validate target value - use category-specific max limit
     const targetValue = parseFloat(form.targetValue);
+    const maxLimit = getMaxLimit();
+
     if (targetValue <= 0) {
       newErrors.targetValue = "Target value must be greater than 0";
-    } else if (targetValue > 10000) {
-      newErrors.targetValue = "Target value seems unrealistic. Please set a more achievable goal (max 10,000)";
+    } else if (targetValue > maxLimit) {
+      newErrors.targetValue = `Max daily CO2 for ${form.category} is ${maxLimit} kg. Set a value within this limit.`;
     }
 
     // Validate deadline - must be at least 1 day in future
@@ -126,20 +144,20 @@ const GoalForm = ({ onSave }) => {
       </div>
       <div className="row">
         <div className="col-md-6 mb-3">
-          <label>Target Value</label>
+          <label>Target Value (kg CO2)</label>
           <input
             type="number"
             name="targetValue"
             value={form.targetValue}
             onChange={handleChange}
             className={`form-control ${errors.targetValue ? 'is-invalid' : ''}`}
-            placeholder="e.g., 100"
+            placeholder={`Max: ${getMaxLimit()} kg CO2`}
             min="1"
-            max="10000"
+            max={getMaxLimit()}
             required
           />
           {errors.targetValue && <div className="invalid-feedback">{errors.targetValue}</div>}
-          <small className="text-muted">Set a realistic target (max 10,000)</small>
+          {form.category && <small className="text-muted">Max for {form.category}: {getMaxLimit()} kg CO2/day</small>}
         </div>
         <div className="col-md-6 mb-3">
           <label>Unit</label>

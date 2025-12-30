@@ -76,7 +76,18 @@ const CarbonTracker = () => {
     return byCategory;
   };
 
-  // Calculate CO2 by category from saved historical data
+  // Filter data for today only
+  const getTodayData = (data) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return data.filter(entry => {
+      const entryDate = new Date(entry.date || entry.createdAt);
+      entryDate.setHours(0, 0, 0, 0);
+      return entryDate.getTime() === today.getTime();
+    });
+  };
+
+  // Calculate CO2 by category from saved historical data (today only)
   const calculateSavedCO2ByCategory = () => {
     const byCategory = { Transportation: 0, Energy: 0, Food: 0, Waste: 0 };
     const categoryMapping = {
@@ -88,7 +99,8 @@ const CarbonTracker = () => {
       waste: "Waste"
     };
 
-    savedData.forEach(entry => {
+    const todayData = getTodayData(savedData);
+    todayData.forEach(entry => {
       const cat = categoryMapping[entry.category] || "Other";
       if (byCategory[cat] !== undefined) {
         byCategory[cat] += entry.calculatedCO2 || 0;
@@ -136,10 +148,13 @@ const CarbonTracker = () => {
 
   const categories = ["All", "Transportation", "Energy", "Food", "Waste"];
 
-  // Use current entries if available, otherwise use saved data for display
+  // Use current entries if available, otherwise use saved data for display (today only)
   const hasCurrentEntries = Object.values(entries).some(v => v > 0);
   const co2ByCategory = hasCurrentEntries ? calculateCO2ByCategory() : calculateSavedCO2ByCategory();
   const highestCategory = Object.entries(co2ByCategory).sort((a, b) => b[1] - a[1])[0];
+
+  // Get today's data for the summary section
+  const todaySavedData = getTodayData(savedData);
 
   return (
     <div className="container my-4">
@@ -204,7 +219,18 @@ const CarbonTracker = () => {
           <div className="card mb-4">
             <div className="card-body">
               <h5 className="card-title">💡 Reduction Tips</h5>
-              {highestCategory && highestCategory[1] > 0 ? (
+              {activeCategory !== "All" ? (
+                <>
+                  <p className="text-muted small">
+                    Tips to reduce your <strong>{activeCategory}</strong> emissions:
+                  </p>
+                  <ul className="list-unstyled">
+                    {REDUCTION_TIPS[activeCategory]?.map((tip, i) => (
+                      <li key={i} className="mb-2 small">{tip}</li>
+                    ))}
+                  </ul>
+                </>
+              ) : highestCategory && highestCategory[1] > 0 ? (
                 <>
                   <p className="text-muted small">
                     Your highest emissions are from <strong>{highestCategory[0]}</strong>.
@@ -252,9 +278,15 @@ const CarbonTracker = () => {
 
       <hr />
 
-      {/* Historical Data */}
-      <h3 className="mt-4">📊 Your Carbon Emission History</h3>
-      <CarbonSummary data={savedData} />
+      {/* Today's Data */}
+      <h3 className="mt-4">📊 Today's Carbon Emissions</h3>
+      {todaySavedData.length > 0 ? (
+        <CarbonSummary data={todaySavedData} />
+      ) : (
+        <div className="alert alert-info">
+          No entries saved for today yet. Enter your activities above and save them!
+        </div>
+      )}
     </div>
   );
 };
